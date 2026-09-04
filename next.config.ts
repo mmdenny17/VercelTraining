@@ -21,6 +21,13 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: "/proxy/zen", destination: "https://api.github.com/zen" },
+      { source: "/backend/:path*", destination: "${process.env.BACKEND_BASE_URL}/:path*" },
+
+      // YOUR TURN. Forward everything under /backend/* to the host in
+      // BACKEND_BASE_URL, preserving the rest of the path:
+      //   /backend/users/octocat  ->  <BACKEND_BASE_URL>/users/octocat
+      // Set BACKEND_BASE_URL to https://api.github.com so it's testable.
+      // Path capture goes on BOTH sides.
     ];
   },
 };
