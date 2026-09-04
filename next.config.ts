@@ -21,7 +21,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       { source: "/proxy/zen", destination: "https://api.github.com/zen" },
-      { source: "/backend/:path*", destination: "${process.env.BACKEND_BASE_URL}/:path*" },
+      { source: "/backend/:path*", destination: `${process.env.BACKEND_BASE_URL}/:path*`,
+},
 
       // YOUR TURN. Forward everything under /backend/* to the host in
       // BACKEND_BASE_URL, preserving the rest of the path:
