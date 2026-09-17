@@ -19,9 +19,10 @@
 //
 // YOUR TURN below this line.
 
-export const dynamic = "force-dynamic";
+import { connection } from "next/server";
 
 export async function GET() {
+  await connection();
   return Response.json({
     ok: true,
     region: process.env.VERCEL_REGION ?? "(no region)",

@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 function describe(request: Request) {
   return Response.json({
     method: request.method,

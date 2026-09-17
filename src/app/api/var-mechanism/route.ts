@@ -23,8 +23,6 @@
 //
 // YOUR TURN below this line.
 
-export const dynamic = "force-dynamic";
-
 export async function GET() {
   const key = "SPIKE_SERVER_VAR";
 
