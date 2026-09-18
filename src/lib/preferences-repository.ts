@@ -19,9 +19,33 @@
 //      silently returning a default. A real SQL query would fail on a
 //      malformed key too.
 //
-// YOUR TURN below this line.
+// ============================================================
+// STAGE B -- the swap, done
+// ============================================================
+// The bodies below now query Postgres (db/001_preferences.sql) through the
+// pool in "@/lib/db". What changed and what didn't is the whole lesson:
+//
+//   changed:   the two function bodies and the import. Nothing imports
+//              preferences-store any more; the fixture stays on disk as
+//              the "what Stage A looked like" reference.
+//   unchanged: the exported signatures, the Preferences type, the
+//              validation rules and PreferencesInputError -- so M5.1c's
+//              Route Handler, including its 400-vs-500 mapping, compiles
+//              and behaves identically against a real database.
+//
+// Requirement #2 was Stage A's, and Stage B is the thing it existed to
+// make cheap. #1 and #3 still hold, and are load-bearing now rather than
+// theatre: the awaits are real I/O, and a bad distId is rejected here
+// before it can reach the driver.
+//
+// Before this runs: apply db/001_preferences.sql and set DATABASE_URL.
 
-import { getRaw, setRaw } from "@/lib/preferences-store";
+// Credentials and query text live in this module now, so make importing it
+// from a Client Component a build error rather than a leak. Next resolves
+// "server-only" internally -- no package install needed.
+import "server-only";
+
+import { pool } from "@/lib/db";
 
 export type Preferences = { celebrationDismissed: boolean };
 
@@ -34,6 +58,11 @@ export class PreferencesInputError extends Error {
     this.name = "PreferencesInputError";
   }
 }
+
+// The row as Postgres spells it. snake_case stops at this seam -- nothing
+// above it should have to know column names. That's the other half of what
+// a repository buys, besides swappable storage.
+type PreferencesRow = { celebration_dismissed: boolean };
 
 // A real `WHERE dist_id = $1` needs a non-empty key. Validating here --
 // at the seam -- rather than in each Route Handler means the rule survives
@@ -58,12 +87,27 @@ function assertPreferences(prefs: Preferences): Preferences {
   return { celebrationDismissed: prefs.celebrationDismissed };
 }
 
+function toPreferences(row: PreferencesRow): Preferences {
+  return { celebrationDismissed: row.celebration_dismissed };
+}
+
 export async function getPreferences(distId: string): Promise<Preferences> {
   const key = assertDistId(distId);
-  // `await` on a sync fixture is deliberate: it makes this call site
-  // identical to the one that will `await pool.query(...)` in Stage B, so
-  // swapping the body later changes nothing above it.
-  return await Promise.resolve(getRaw(key));
+
+  // `$1`, never string interpolation: node-postgres sends the value as a
+  // bound parameter, so a distId of `'; drop table preferences; --` is a
+  // key that matches nothing, not SQL.
+  const { rows } = await pool.query<PreferencesRow>(
+    "SELECT celebration_dismissed FROM preferences WHERE dist_id = $1",
+    [key]
+  );
+
+  // No row is not an error: a distributor who has never dismissed the
+  // banner just doesn't have one yet. Defaulting here reproduces exactly
+  // what getRaw returned, so the swap stays invisible to callers -- and it
+  // keeps the read path from writing, which would make a GET non-idempotent.
+  const row = rows[0];
+  return row ? toPreferences(row) : { celebrationDismissed: false };
 }
 
 export async function savePreferences(
@@ -72,8 +116,27 @@ export async function savePreferences(
 ): Promise<Preferences> {
   const key = assertDistId(distId);
   const row = assertPreferences(prefs);
-  // Returns the persisted row (the fixture's setRaw echoes it back) the
-  // way an `INSERT ... ON CONFLICT DO UPDATE ... RETURNING *` would, so
-  // callers never have to re-read to learn what was stored.
-  return await Promise.resolve(setRaw(key, row));
+
+  // Upsert, because the caller is saying "this is the state now" and
+  // shouldn't have to know whether a row exists. RETURNING hands back what
+  // actually landed -- the shape Stage A promised -- so callers never
+  // re-read to learn what was stored, and a column DEFAULT or trigger that
+  // rewrote the value would surface here instead of being assumed away.
+  const { rows } = await pool.query<PreferencesRow>(
+    `INSERT INTO preferences (dist_id, celebration_dismissed)
+     VALUES ($1, $2)
+     ON CONFLICT (dist_id)
+     DO UPDATE SET celebration_dismissed = EXCLUDED.celebration_dismissed
+     RETURNING celebration_dismissed`,
+    [key, row.celebrationDismissed]
+  );
+
+  // An upsert that returns no row means the write didn't land (a rule
+  // skipped the conflict path, the table is missing). That's our fault,
+  // not the caller's, so it stays a plain Error -> 500 in M5.1c.
+  const saved = rows[0];
+  if (!saved) {
+    throw new Error(`failed to persist preferences for distId ${key}`);
+  }
+  return toPreferences(saved);
 }
