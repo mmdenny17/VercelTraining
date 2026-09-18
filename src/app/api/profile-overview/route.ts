@@ -61,6 +61,17 @@ function toSlice<T>(result: PromiseSettledResult<T>): Slice<T> {
   };
 }
 
+// distributorService now hits a real backend that keys distributor data by
+// PV period, so this endpoint has to name one. Current month in UTC,
+// formatted YYYYMM -- the doTERRA PV period convention. Internal only:
+// GET /api/profile-overview?distId= is unchanged for callers, they just
+// get "this period" without having to ask for it.
+function currentPvPeriod(now: Date = new Date()): string {
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}${month}`;
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const distId = searchParams.get("distId")?.trim() ?? "";
@@ -78,7 +89,7 @@ export async function GET(request: NextRequest) {
   const [baseline, boost, distributor] = await Promise.allSettled([
     baselineService(distId),
     boostService(distId),
-    distributorService(distId, simulateFailure),
+    distributorService(distId, currentPvPeriod(), simulateFailure),
   ]);
 
   const slices = {
