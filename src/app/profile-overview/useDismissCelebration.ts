@@ -1,9 +1,10 @@
-// Shared client-side hook, extracted from DismissCelebrationButton so the
-// new CelebrationModal drives the exact same POST /api/preferences logic
-// instead of a second, drifting copy of it. Not a build item -- the state
-// machine and its reasoning (fetch resolves on 4xx, only rejects on a real
-// transport failure; distinguishing the two error messages) were already
-// written and verified in DismissCelebrationButton.
+// Client-side hook backing CelebrationModal's real dismiss action. Not a
+// build item. The state machine matters more than it looks: fetch resolves
+// (doesn't reject) on a 4xx from M5.1c, so success/error is decided by
+// response.ok, not by try/catch alone -- only a genuine transport failure
+// (offline, DNS) lands in the catch block, and the two cases get distinct
+// error messages because "the server said no" and "nothing reached the
+// server" are different problems with different fixes.
 
 "use client";
 

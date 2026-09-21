@@ -48,7 +48,6 @@ import styles from "./profile-overview.module.css";
 // id crosses the RSC boundary as a serialized prop, so the client never
 // has to go look it up for itself, and the fetching, the endpoint URL,
 // and the mocked services behind it never ship to the browser at all.
-import DismissCelebrationButton from "./DismissCelebrationButton";
 import CelebrationModal from "./CelebrationModal";
 
 // The real PO3 dev1 distributor this session verified end to end. Applies
@@ -258,20 +257,11 @@ async function Overview({
   );
 }
 
-// The button needs distId and nothing else, so it gets its own boundary
-// instead of riding along inside Overview. searchParams resolves as soon
-// as the request is in hand; the fan-out behind /api/profile-overview
-// costs ~300ms plus a PO3 login on top of that. One shared boundary would
-// make the button sit behind data it never reads.
-async function DismissSlot({
-  searchParams,
-}: Pick<PageProps<"/profile-overview">, "searchParams">) {
-  const distId = normalizeDistId((await searchParams).distId);
-  return <DismissCelebrationButton distId={distId} />;
-}
-
-// Same shape as DismissSlot -- its own boundary so the modal can pop in as
-// soon as distId resolves, without waiting on the aggregation fetch.
+// Its own boundary so the modal can pop in as soon as distId resolves,
+// without waiting on the aggregation fetch -- the fan-out behind
+// /api/profile-overview costs ~300ms plus a PO3 login on top of that. A
+// shared boundary with Overview would make the modal sit behind data it
+// never reads.
 async function CelebrationSlot({
   searchParams,
 }: Pick<PageProps<"/profile-overview">, "searchParams">) {
@@ -298,9 +288,6 @@ export default function ProfileOverviewPage({
           <Overview searchParams={searchParams} />
         </Suspense>
 
-        <Suspense fallback={null}>
-          <DismissSlot searchParams={searchParams} />
-        </Suspense>
       </div>
 
       <Suspense fallback={null}>
