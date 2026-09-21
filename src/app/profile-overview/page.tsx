@@ -126,7 +126,17 @@ async function getOverview(
   distId: string,
   simulateFailure: boolean,
 ): Promise<OverviewResponse> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  // Vercel injects VERCEL_URL automatically on every deployment -- one of
+  // the System Environment Variables from Module 1, so nothing has to be
+  // set in the dashboard for it to exist. Two things it does not do: it
+  // arrives as a bare host with no protocol, so the `https://` is ours to
+  // add, and it is only populated on Vercel's own infrastructure. That
+  // second one is what makes the fallback correct rather than defensive --
+  // in local dev the variable is genuinely absent, and localhost:3000 is
+  // genuinely where this app's own API route is listening.
+  const base = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
   // Appended only when on. `simulateFailure=0` would work too -- the
   // handler reads it as off -- but omitting it keeps the normal-path
   // request byte-identical to what it was before this flag existed.
