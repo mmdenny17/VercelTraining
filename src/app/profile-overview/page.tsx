@@ -49,6 +49,7 @@ import styles from "./profile-overview.module.css";
 // has to go look it up for itself, and the fetching, the endpoint URL,
 // and the mocked services behind it never ship to the browser at all.
 import DismissCelebrationButton from "./DismissCelebrationButton";
+import CelebrationModal from "./CelebrationModal";
 
 // The real PO3 dev1 distributor this session verified end to end. Applies
 // only when ?distId= is absent entirely -- see normalizeDistId.
@@ -173,20 +174,57 @@ async function Overview({
     normalizeSimulateFailure(params.simulateFailure),
   );
 
+  // Decorative only: the real PersonalDetailsOverview computes a percent
+  // toward the next level from target volumes the simplified capstone
+  // data model doesn't have. These bounds (baseline /100, boost /10) exist
+  // only to make the bars read as bars, not as a real progression metric --
+  // labeled here so nobody mistakes the fill width for the real thing.
+  const baselinePercent = Math.min(100, data.baseline.data.baseline);
+  const boostPercent = Math.min(100, (data.boost.data.boost / 10) * 100);
+  const initials = data.distId.slice(0, 2);
+
   return (
     <>
-      <p className={styles.distId}>distId: {data.distId}</p>
+      <div className={styles.identity}>
+        <div className={styles.avatar}>{initials}</div>
+        <div className={styles.identityMeta}>
+          <p className={styles.name}>Distributor {data.distId}</p>
+          <p className={styles.metaLine}>
+            Rank:{" "}
+            <strong>
+              {data.distributor.error !== null
+                ? "—"
+                : (data.distributor.data.rank ?? "—")}
+            </strong>
+          </p>
+        </div>
+      </div>
 
       {/* READY STATE (#4). No conditional, because there is nothing these
           two can do except succeed -- see the OverviewResponse comment. */}
-      <div className={styles.statGrid}>
-        <div className={styles.stat}>
-          <span className={styles.statLabel}>Baseline</span>
-          <span className={styles.statValue}>{data.baseline.data.baseline}</span>
+      <p className={styles.sectionTitle}>Current Compensation</p>
+      <div className={styles.progressRow}>
+        <div className={styles.progressLabel}>
+          <span>Baseline</span>
+          <span>{data.baseline.data.baseline}</span>
         </div>
-        <div className={styles.stat}>
-          <span className={styles.statLabel}>Boost</span>
-          <span className={styles.statValue}>{data.boost.data.boost}</span>
+        <div className={styles.progressTrack}>
+          <div
+            className={`${styles.progressFill} ${styles.progressFillBaseline}`}
+            style={{ width: `${baselinePercent}%` }}
+          />
+        </div>
+      </div>
+      <div className={styles.progressRow}>
+        <div className={styles.progressLabel}>
+          <span>Boost</span>
+          <span>{data.boost.data.boost}</span>
+        </div>
+        <div className={styles.progressTrack}>
+          <div
+            className={`${styles.progressFill} ${styles.progressFillBoost}`}
+            style={{ width: `${boostPercent}%` }}
+          />
         </div>
       </div>
 
@@ -199,33 +237,23 @@ async function Overview({
           fails ("couldn't log in" vs "couldn't read the distributor") are
           different problems with different fixes. */}
       <div className={styles.section}>
+        <p className={styles.sectionTitle}>Distributor record</p>
         {data.distributor.error !== null ? (
           <p className={styles.empty}>
             No information to show ({data.distributor.error})
           </p>
         ) : (
-          <div className={styles.statGrid}>
+          <p className={styles.metaLine}>
             {/* rank/enrollDate are independently nullable even on a slice
                 that succeeded -- a real distributor with no rank yet.
                 That's a present-but-blank field, not the empty state
                 above, so it keeps its label and gets a dash. */}
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Rank</span>
-              <span className={styles.statValue}>
-                {data.distributor.data.rank ?? "—"}
-              </span>
-            </div>
-            <div className={styles.stat}>
-              <span className={styles.statLabel}>Enrolled</span>
-              <span className={styles.statValue}>
-                {data.distributor.data.enrollDate ?? "—"}
-              </span>
-            </div>
-          </div>
+            Enrolled: <strong>{data.distributor.data.enrollDate ?? "—"}</strong>
+          </p>
         )}
       </div>
 
-      <p className={styles.fetchedAt}>fetched at {data.fetchedAt}</p>
+      <p className={styles.lastUpdated}>Last updated: {data.fetchedAt}</p>
     </>
   );
 }
@@ -242,6 +270,15 @@ async function DismissSlot({
   return <DismissCelebrationButton distId={distId} />;
 }
 
+// Same shape as DismissSlot -- its own boundary so the modal can pop in as
+// soon as distId resolves, without waiting on the aggregation fetch.
+async function CelebrationSlot({
+  searchParams,
+}: Pick<PageProps<"/profile-overview">, "searchParams">) {
+  const distId = normalizeDistId((await searchParams).distId);
+  return <CelebrationModal distId={distId} />;
+}
+
 // Not async, and it never awaits searchParams itself. searchParams is a
 // request-time API: reading it here would opt the entire page into
 // dynamic rendering. Passing the promise down and awaiting it inside the
@@ -253,13 +290,11 @@ export default function ProfileOverviewPage({
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Profile Overview</h1>
-
         {/* LOADING STATE sits in two places on purpose: loading.tsx covers
             the whole route on a direct visit, before this shell exists;
             this inner fallback covers the data once the shell itself is
             static. */}
-        <Suspense fallback={<p className={styles.distId}>loading…</p>}>
+        <Suspense fallback={<p className={styles.metaLine}>loading…</p>}>
           <Overview searchParams={searchParams} />
         </Suspense>
 
@@ -267,6 +302,10 @@ export default function ProfileOverviewPage({
           <DismissSlot searchParams={searchParams} />
         </Suspense>
       </div>
+
+      <Suspense fallback={null}>
+        <CelebrationSlot searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

@@ -19,7 +19,6 @@ export default function Error({
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Profile Overview</h1>
         <p className={styles.errorCard}>Something went wrong: {error.message}</p>
         <button onClick={reset} className={styles.button}>
           Try again

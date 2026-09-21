@@ -10,8 +10,7 @@ export default function Loading() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Profile Overview</h1>
-        <p className={styles.distId}>loading…</p>
+        <p className={styles.metaLine}>loading…</p>
       </div>
     </div>
   );
