@@ -212,7 +212,7 @@ async function Overview({
 
       {/* READY STATE (#4). No conditional, because there is nothing these
           two can do except succeed -- see the OverviewResponse comment. */}
-      <p className={styles.sectionTitle}>BROKEN DEMO — ROLLBACK ME</p>
+      <p className={styles.sectionTitle}>Current Compensation</p>
       <div className={styles.progressRow}>
         <div className={styles.progressLabel}>
           <span>Baseline</span>
