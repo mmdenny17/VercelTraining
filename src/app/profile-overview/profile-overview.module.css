@@ -192,6 +192,44 @@
   font-size: 13px;
 }
 
+/* Skeleton loader -- mirrors the card's real shape (avatar, name/rank
+   lines, two progress rows, a record line) so nothing shifts when the real
+   content streams in. Same pulse convention as PO3's real
+   PersonalDetailsOverviewSkeleton, rebuilt rather than ported. */
+
+.skeletonBlock {
+  background: var(--border, #e7e9eb);
+  border-radius: 6px;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeletonAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeletonLine {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeletonTrack {
+  height: 10px;
+  border-radius: 999px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
 /* CelebrationModal -- mock only, not tied to real PO3 level-up logic. */
 
 .modalOverlay {

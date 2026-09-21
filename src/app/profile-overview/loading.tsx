@@ -5,12 +5,13 @@
 // (Module 3), just at the route level instead of hand-wired.
 
 import styles from "./profile-overview.module.css";
+import ProfileOverviewSkeleton from "./ProfileOverviewSkeleton";
 
 export default function Loading() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <p className={styles.metaLine}>loading…</p>
+        <ProfileOverviewSkeleton />
       </div>
     </div>
   );

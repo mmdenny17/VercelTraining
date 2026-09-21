@@ -49,6 +49,7 @@ import styles from "./profile-overview.module.css";
 // has to go look it up for itself, and the fetching, the endpoint URL,
 // and the mocked services behind it never ship to the browser at all.
 import CelebrationModal from "./CelebrationModal";
+import ProfileOverviewSkeleton from "./ProfileOverviewSkeleton";
 
 // The real PO3 dev1 distributor this session verified end to end. Applies
 // only when ?distId= is absent entirely -- see normalizeDistId.
@@ -284,7 +285,7 @@ export default function ProfileOverviewPage({
             the whole route on a direct visit, before this shell exists;
             this inner fallback covers the data once the shell itself is
             static. */}
-        <Suspense fallback={<p className={styles.metaLine}>loading…</p>}>
+        <Suspense fallback={<ProfileOverviewSkeleton />}>
           <Overview searchParams={searchParams} />
         </Suspense>
 
