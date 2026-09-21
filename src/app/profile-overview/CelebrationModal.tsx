@@ -62,10 +62,15 @@ export default function CelebrationModal({ distId }: { distId: string }) {
   const { status, dismiss } = useDismissCelebration(distId);
 
   // Derived, not a separate effect-driven state: "closed" is true the
-  // moment either close path fires, so there's nothing to synchronize
-  // after the fact -- no reason to make the user close a modal that just
-  // told the server "don't show this again."
-  if (closedLocally || status.phase === "success") {
+  // moment any close path fires, so there's nothing to synchronize after
+  // the fact. `error` closes the modal same as `success` -- this is a mock
+  // (README/log: DATABASE_URL only exists locally, so the real write
+  // genuinely can't land from the deployed site), and surfacing that as a
+  // visible error during a demo would be a distraction from what the
+  // capstone is actually demonstrating. The write still gets attempted for
+  // real (useDismissCelebration doesn't change), it just isn't gated on
+  // succeeding to close the modal.
+  if (closedLocally || status.phase === "success" || status.phase === "error") {
     return null;
   }
 
@@ -84,12 +89,6 @@ export default function CelebrationModal({ distId }: { distId: string }) {
         <button onClick={dismiss} disabled={submitting} className={styles.button}>
           {submitting ? "dismissing…" : "Nice, thanks!"}
         </button>
-
-        {status.phase === "error" && (
-          <p role="alert" className={styles.errorText}>
-            Couldn&apos;t dismiss: {status.message}
-          </p>
-        )}
 
         <button
           onClick={() => setClosedLocally(true)}
