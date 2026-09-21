@@ -7,6 +7,8 @@
 
 "use client";
 
+import styles from "./profile-overview.module.css";
+
 export default function Error({
   error,
   reset,
@@ -15,10 +17,14 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <main style={{ fontFamily: "monospace", padding: "2rem", lineHeight: 1.8 }}>
-      <h1>profile-overview (capstone)</h1>
-      <p>Something went wrong: {error.message}</p>
-      <button onClick={reset}>Try again</button>
-    </main>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Profile Overview</h1>
+        <p className={styles.errorCard}>Something went wrong: {error.message}</p>
+        <button onClick={reset} className={styles.button}>
+          Try again
+        </button>
+      </div>
+    </div>
   );
 }

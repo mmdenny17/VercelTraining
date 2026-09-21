@@ -4,11 +4,15 @@
 // mechanism as the inline <Suspense fallback> pattern from nav-preview
 // (Module 3), just at the route level instead of hand-wired.
 
+import styles from "./profile-overview.module.css";
+
 export default function Loading() {
   return (
-    <main style={{ fontFamily: "monospace", padding: "2rem", lineHeight: 1.8 }}>
-      <h1>profile-overview (capstone)</h1>
-      <p>loading…</p>
-    </main>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Profile Overview</h1>
+        <p className={styles.distId}>loading…</p>
+      </div>
+    </div>
   );
 }

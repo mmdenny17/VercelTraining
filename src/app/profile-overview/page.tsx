@@ -36,6 +36,7 @@
 // YOUR TURN below this line.
 
 import { Suspense } from "react";
+import styles from "./profile-overview.module.css";
 
 // The boundary, from this side (the long version lives in the component's
 // own file). Everything in page.tsx stays a Server Component: it fetches,
@@ -174,14 +175,20 @@ async function Overview({
 
   return (
     <>
-      <p>
-        distId: <strong>{data.distId}</strong>
-      </p>
+      <p className={styles.distId}>distId: {data.distId}</p>
 
       {/* READY STATE (#4). No conditional, because there is nothing these
           two can do except succeed -- see the OverviewResponse comment. */}
-      <p>baseline: {data.baseline.data.baseline}</p>
-      <p>boost: {data.boost.data.boost}</p>
+      <div className={styles.statGrid}>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>Baseline</span>
+          <span className={styles.statValue}>{data.baseline.data.baseline}</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>Boost</span>
+          <span className={styles.statValue}>{data.boost.data.boost}</span>
+        </div>
+      </div>
 
       {/* EMPTY STATE (#5). The distributor slice is the one that can come
           back empty, because it's the one backed by a real service (PO3
@@ -191,20 +198,34 @@ async function Overview({
           blanks. The message is worth showing because the two ways it
           fails ("couldn't log in" vs "couldn't read the distributor") are
           different problems with different fixes. */}
-      {data.distributor.error !== null ? (
-        <p>distributor: No information to show ({data.distributor.error})</p>
-      ) : (
-        <>
-          {/* rank/enrollDate are independently nullable even on a slice
-              that succeeded -- a real distributor with no rank yet. That's
-              a present-but-blank field, not the empty state above, so it
-              keeps its label and gets a dash. */}
-          <p>rank: {data.distributor.data.rank ?? "—"}</p>
-          <p>enrolled: {data.distributor.data.enrollDate ?? "—"}</p>
-        </>
-      )}
+      <div className={styles.section}>
+        {data.distributor.error !== null ? (
+          <p className={styles.empty}>
+            No information to show ({data.distributor.error})
+          </p>
+        ) : (
+          <div className={styles.statGrid}>
+            {/* rank/enrollDate are independently nullable even on a slice
+                that succeeded -- a real distributor with no rank yet.
+                That's a present-but-blank field, not the empty state
+                above, so it keeps its label and gets a dash. */}
+            <div className={styles.stat}>
+              <span className={styles.statLabel}>Rank</span>
+              <span className={styles.statValue}>
+                {data.distributor.data.rank ?? "—"}
+              </span>
+            </div>
+            <div className={styles.stat}>
+              <span className={styles.statLabel}>Enrolled</span>
+              <span className={styles.statValue}>
+                {data.distributor.data.enrollDate ?? "—"}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
 
-      <p style={{ opacity: 0.6 }}>fetched at {data.fetchedAt}</p>
+      <p className={styles.fetchedAt}>fetched at {data.fetchedAt}</p>
     </>
   );
 }
@@ -230,19 +251,22 @@ export default function ProfileOverviewPage({
   searchParams,
 }: PageProps<"/profile-overview">) {
   return (
-    <main style={{ fontFamily: "monospace", padding: "2rem", lineHeight: 1.8 }}>
-      <h1>profile-overview (capstone)</h1>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Profile Overview</h1>
 
-      {/* LOADING STATE sits in two places on purpose: loading.tsx covers
-          the whole route on a direct visit, before this shell exists; this
-          inner fallback covers the data once the shell itself is static. */}
-      <Suspense fallback={<p>loading…</p>}>
-        <Overview searchParams={searchParams} />
-      </Suspense>
+        {/* LOADING STATE sits in two places on purpose: loading.tsx covers
+            the whole route on a direct visit, before this shell exists;
+            this inner fallback covers the data once the shell itself is
+            static. */}
+        <Suspense fallback={<p className={styles.distId}>loading…</p>}>
+          <Overview searchParams={searchParams} />
+        </Suspense>
 
-      <Suspense fallback={null}>
-        <DismissSlot searchParams={searchParams} />
-      </Suspense>
-    </main>
+        <Suspense fallback={null}>
+          <DismissSlot searchParams={searchParams} />
+        </Suspense>
+      </div>
+    </div>
   );
 }

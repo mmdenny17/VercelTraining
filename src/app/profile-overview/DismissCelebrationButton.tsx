@@ -72,6 +72,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./profile-overview.module.css";
 
 // A discriminated union rather than a pile of booleans, so the impossible
 // states (submitting AND success, error with no message) can't be
@@ -149,7 +150,7 @@ export default function DismissCelebrationButton({
   // tree (M5.1c's revalidateTag already handles the server-side cache).
   if (status.phase === "success") {
     return (
-      <p role="status" style={{ margin: "1.5rem 0" }}>
+      <p role="status" className={styles.success}>
         Celebration dismissed for {distId}.
       </p>
     );
@@ -158,18 +159,14 @@ export default function DismissCelebrationButton({
   const submitting = status.phase === "submitting";
 
   return (
-    <div style={{ margin: "1.5rem 0" }}>
+    <div>
       {/* Three labels, not two: from the error state this button is a
           retry, and saying so is the difference between "it failed" and
           "it failed, here's what to do". It runs the same dismiss() --
           setStatus({ phase: "submitting" }) clears the error first, so the
           retry happens in place with no reload. `disabled` while
           submitting is what keeps a double-click from racing two POSTs. */}
-      <button
-        onClick={dismiss}
-        disabled={submitting}
-        style={{ padding: "0.5rem 1rem", fontFamily: "inherit" }}
-      >
+      <button onClick={dismiss} disabled={submitting} className={styles.button}>
         {submitting
           ? "dismissing…"
           : status.phase === "error"
@@ -178,7 +175,7 @@ export default function DismissCelebrationButton({
       </button>
 
       {status.phase === "error" && (
-        <p role="alert" style={{ marginTop: "0.75rem" }}>
+        <p role="alert" className={styles.errorText}>
           Couldn&apos;t dismiss: {status.message}
         </p>
       )}
